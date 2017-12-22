@@ -953,6 +953,14 @@ fixmystreet.update_pin = function(lonlat, savePushState) {
         } else {
             $('#js-contribute-as-wrapper').hide();
         }
+        if (fixmystreet.hooks.update_pin) {
+            var args = {
+                lat: $('#fixmystreet\\.latitude').val(),
+                lon: $('#fixmystreet\\.longitude').val()
+            };
+
+            fixmystreet.hooks.update_pin(args);
+        }
     });
 
     if (!$('#side-form-error').is(':visible')) {
