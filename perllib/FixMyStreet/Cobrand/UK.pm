@@ -117,9 +117,9 @@ sub short_name {
 }
 
 sub find_closest {
-    my ( $self, $problem, $as_data ) = @_;
+    my ($self, $problem) = @_;
 
-    my $data = $self->SUPER::find_closest($problem, $as_data);
+    my $closest = $self->SUPER::find_closest($problem);
 
     my $mapit_url = FixMyStreet->config('MAPIT_URL');
     my ($lat, $lon) = map { Utils::truncate_coordinate($_) } $problem->latitude, $problem->longitude;
@@ -128,16 +128,11 @@ sub find_closest {
     if ($j) {
         $j = JSON->new->utf8->allow_nonref->decode($j);
         if ($j->{postcode}) {
-            if ($as_data) {
-                $data->{postcode} = $j->{postcode};
-            } else {
-                $data .= sprintf(_("Nearest postcode to the pin placed on the map (automatically generated): %s (%sm away)"),
-                    $j->{postcode}{postcode}, $j->{postcode}{distance}) . "\n\n";
-            }
+            $closest->{postcode} = $j->{postcode};
         }
     }
 
-    return $data;
+    return $closest;
 }
 
 sub reports_body_check {
