@@ -9,10 +9,23 @@
 [% INCLUDE 'header.html', title = loc('Dashboard'), bodyclass => 'dashboard fullwidthpage' %]
 
 <div class="dashboard-header">
-    <h1>FMS [% loc('Dashboard') %]
-    [% IF body %] – [% body.name %] [% END %]
-    </h1>
+    <h1>FMS [% loc('Dashboard') %] – [% body.name %]</h1>
 </div>
+
+[% IF body.send_method == 'Email' OR body.send_method == '' %]
+<p>Along with most UK councils, [% body.name %] receives reports from
+FixMyStreet.com via email; you can see a full list of the email addresses we
+send reports to at the bottom of this page.
+
+<p>[% body.name %] is not currently taking advantage of
+FixMyStreet<sup>Pro</sup>, which removes the need for email, and submits
+reports directly into your CRM.
+
+<p>By integrating with FixMyStreet<sup>Pro</sup> you’ll provide your citizens
+and staff with one simple and efficient place to report and manage all of your
+non-emergency issues — reducing your customer service burden, and saving money
+from day one.
+[% END %]
 
 <form method="GET">
     <div class="filters">
@@ -119,6 +132,35 @@
                 <tr><td>[% loc('Other categories') %]</td><td>[% tprintf(nget("%s report", "%s reports", other_categories), decode(other_categories_formatted)) %]</td></tr>
             </tfoot>
         </table>
+    </div>
+</div>
+
+<div class="dashboard-row">
+    <div class="dashboard-item dashboard-item--12">
+        <h2>Case Studies</h2>
+    </div>
+</div>
+
+<div class="dashboard-row">
+    <div class="dashboard-item dashboard-item--6">
+        <h3 class="dashboard-subheading">Oxfordshire County Council</h3>
+        <p>See how Oxfordshire save hundreds of thousands of pounds with an end to end FixMyStreet<sup>Pro</sup> service.</p>
+    </div>
+    <div class="dashboard-item dashboard-item--6">
+        <h3 class="dashboard-subheading">Bristol City Council</h3>
+        <p>Bristol have put FixMyStreet at the heart of their anti-litter campaign, and are involving many citizens in their work.</p>
+    </div>
+</div>
+
+<div class="dashboard-row">
+    <div class="dashboard-item dashboard-item--4">
+        <p align="center">Book a callback to schedule a one-to-one demo</p>
+    </div>
+    <div class="dashboard-item dashboard-item--4">
+        <p align="center">Find out more — join one of our regular webinars</p>
+    </div>
+    <div class="dashboard-item dashboard-item--4">
+        <p align="center">Need information? Request our factsheets</p>
     </div>
 </div>
 
