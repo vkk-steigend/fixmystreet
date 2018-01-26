@@ -605,6 +605,11 @@ $.extend(fixmystreet.set_up, {
             $('input[name=upload_fileid]', $context).val(newstr);
           });
           this.on("error", function(file, errorMessage, xhrResponse) {
+              var msg = "Invalid file type: " + file.type;
+              if (window.console && console.log) {
+                  console.log(msg);
+              }
+              alert(msg);
           });
           this.on("removedfile", function(file) {
             var ids = $('input[name=upload_fileid]', $context).val().split(','),
