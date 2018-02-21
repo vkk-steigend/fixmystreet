@@ -29,8 +29,8 @@ my $requests_xml = qq{<?xml version="1.0" encoding="utf-8"?>
 <requested_datetime>2010-04-14T06:37:38-08:00</requested_datetime>
 <updated_datetime>2010-04-14T06:37:38-08:00</updated_datetime>
 <expected_datetime>2010-04-15T06:37:38-08:00</expected_datetime>
-<lat>37.762221815</lat>
-<long>-122.4651145</long>
+<lat>51.4021</lat>
+<long>0.01578</long>
 </request>
 <request>
 <service_request_id>638345</service_request_id>
@@ -44,8 +44,8 @@ my $requests_xml = qq{<?xml version="1.0" encoding="utf-8"?>
 <requested_datetime>2010-04-15T06:37:38-08:00</requested_datetime>
 <updated_datetime>2010-04-15T06:37:38-08:00</updated_datetime>
 <expected_datetime>2010-04-15T06:37:38-08:00</expected_datetime>
-<lat>37.762221815</lat>
-<long>-122.4651145</long>
+<lat>51.4021</lat>
+<long>0.01578</long>
 </request>
 </service_requests>
 };
@@ -59,7 +59,11 @@ my $o = Open311->new(
 
 subtest 'basic parsing checks' => sub {
     my $update = Open311::GetServiceRequests->new( system_user => $user );
-    $update->create_problems( $o, $body );
+    FixMyStreet::override_config {
+        MAPIT_URL => 'http://mapit.uk/',
+    }, sub {
+        $update->create_problems( $o, $body );
+    };
 
     my $p1_date = $dtf->parse_datetime('2010-04-14T06:37:38-08:00')
                     ->set_time_zone(
@@ -88,114 +92,63 @@ subtest 'basic parsing checks' => sub {
 
 subtest 'check problems not re-created' => sub {
     my $update = Open311::GetServiceRequests->new( system_user => $user );
-    $update->create_problems( $o, $body );
+    FixMyStreet::override_config {
+        MAPIT_URL => 'http://mapit.uk/',
+    }, sub {
+        $update->create_problems( $o, $body );
+    };
 
     my $count = FixMyStreet::DB->resultset('Problem')->count;
 
-    $update->create_problems( $o, $body );
+    FixMyStreet::override_config {
+        MAPIT_URL => 'http://mapit.uk/',
+    }, sub {
+        $update->create_problems( $o, $body );
+    };
 
     my $after_count = FixMyStreet::DB->resultset('Problem')->count;
 
     is $count, $after_count, "problems not re-created";
 };
 
-my $bad_requests_xml = qq{<?xml version="1.0" encoding="utf-8"?>
-<service_requests>
-<request>
-<service_request_id></service_request_id>
-<status>open</status>
-<status_notes></status_notes>
-<service_name>Sidewalk and Curb Issues</service_name>
-<service_code>sidewalks</service_code>
-<description>This is a problem with no service code</description>
-<agency_responsible></agency_responsible>
-<service_notice></service_notice>
-<requested_datetime>2010-04-14T06:37:38-08:00</requested_datetime>
-<updated_datetime>2010-04-14T06:37:38-08:00</updated_datetime>
-<expected_datetime>2010-04-15T06:37:38-08:00</expected_datetime>
-<lat>37.762221815</lat>
-<long>-122.4651145</long>
-</request>
-</service_requests>
-};
-
-subtest 'check problems with no id are ignored' => sub {
-    my $o = Open311->new(
-        jurisdiction => 'mysociety',
-        endpoint => 'http://example.com',
-        test_mode => 1,
-        test_get_returns => { 'requests.xml' => $bad_requests_xml }
-    );
-
-    my $count = FixMyStreet::DB->resultset('Problem')->count;
-    my $update = Open311::GetServiceRequests->new( system_user => $user );
-    $update->create_problems( $o, $body );
-    my $after_count = FixMyStreet::DB->resultset('Problem')->count;
-
-    warn $count;
-    is $count, $after_count, "problems not created";
-
-    my $with_text = FixMyStreet::DB->resultset('Problem')->search( {
-          detail => 'This is a problem with no service code',
-    } )->count;
-
-    is $with_text, 0, 'no matching problem created';
-};
-
-for my $test ({
-    detail => 'This is a problem with no lat',
-    xml => qq[<?xml version="1.0" encoding="utf-8"?>
-<service_requests>
-<request>
-<service_request_id>123456</service_request_id>
-<status>open</status>
-<status_notes></status_notes>
-<service_name>Sidewalk and Curb Issues</service_name>
-<service_code>sidewalks</service_code>
-<description>This is a problem with no lat</description>
-<agency_responsible></agency_responsible>
-<service_notice></service_notice>
-<requested_datetime>2010-04-14T06:37:38-08:00</requested_datetime>
-<updated_datetime>2010-04-14T06:37:38-08:00</updated_datetime>
-<expected_datetime>2010-04-15T06:37:38-08:00</expected_datetime>
-<lat></lat>
-<long>-122.4651145</long>
-</request>
-</service_requests>
-],
-},
-{
-    detail => 'This is a problem with no long',
-    xml => qq[<?xml version="1.0" encoding="utf-8"?>
-<service_requests>
-<request>
-<service_request_id>123457</service_request_id>
-<status>open</status>
-<status_notes></status_notes>
-<service_name>Sidewalk and Curb Issues</service_name>
-<service_code>sidewalks</service_code>
-<description>This is a problem with no long</description>
-<agency_responsible></agency_responsible>
-<service_notice></service_notice>
-<requested_datetime>2010-04-14T06:37:38-08:00</requested_datetime>
-<updated_datetime>2010-04-14T06:37:38-08:00</updated_datetime>
-<expected_datetime>2010-04-15T06:37:38-08:00</expected_datetime>
-<lat>37.762221815</lat>
-<long></long>
-</request>
-</service_requests>
-]} ) {
-    subtest 'check problem with no lat or long are ignored' => sub {
+for my $test (
+  {
+      desc => 'problem with no id is not created',
+      detail => 'This is a problem with no service_code',
+      subs => { id => '', desc => 'This is a problem with service code' },
+  },
+  {
+      desc => 'problem with no lat is not created',
+      detail => 'This is a problem with no lat',
+      subs => { lat => '', desc => 'This is a problem with no lat' },
+  },
+  {
+      desc => 'problem with no long is not created',
+      detail => 'This is a problem with no long',
+      subs => { long => '', desc => 'This is a problem with no long' },
+  },
+  {
+      desc => 'problem with bad lat/long is not created',
+      detail => 'This is a problem with bad lat/long',
+      subs => { lat => '51', long => 0.1, desc => 'This is a problem with bad lat/long' },
+  },
+) {
+    subtest $test->{desc} => sub {
+        my $xml = prepare_xml( $test->{subs} );
         my $o = Open311->new(
             jurisdiction => 'mysociety',
             endpoint => 'http://example.com',
             test_mode => 1,
-            test_get_returns => { 'requests.xml' => $test->{xml}}
+            test_get_returns => { 'requests.xml' => $xml}
         );
 
         my $count = FixMyStreet::DB->resultset('Problem')->count;
         my $update = Open311::GetServiceRequests->new( system_user => $user );
-        $update->create_problems( $o, $body );
+        FixMyStreet::override_config {
+            MAPIT_URL => 'http://mapit.uk/',
+        }, sub {
+            $update->create_problems( $o, $body );
+        };
         my $after_count = FixMyStreet::DB->resultset('Problem')->count;
 
         warn $count;
@@ -207,6 +160,45 @@ for my $test ({
 
         is $with_text, 0, 'no matching problem created';
     };
+}
+
+sub prepare_xml {
+    my $replacements = shift;
+
+    my %defaults = (
+        desc => 'this is a problem',
+        lat => 51.4021,
+        long => 0.01578,
+        id => 123456,
+        %$replacements
+    );
+
+    my $xml = qq[<?xml version="1.0" encoding="utf-8"?>
+<service_requests>
+<request>
+<service_request_id>XXX_ID</service_request_id>
+<status>open</status>
+<status_notes></status_notes>
+<service_name>Sidewalk and Curb Issues</service_name>
+<service_code>sidewalks</service_code>
+<description>XXX_DESC</description>
+<agency_responsible></agency_responsible>
+<service_notice></service_notice>
+<requested_datetime>2010-04-14T06:37:38-08:00</requested_datetime>
+<updated_datetime>2010-04-14T06:37:38-08:00</updated_datetime>
+<expected_datetime>2010-04-15T06:37:38-08:00</expected_datetime>
+<lat>XXX_LAT</lat>
+<long>XXX_LONG</long>
+</request>
+</service_requests>
+];
+
+    for my $key (keys %defaults) {
+        my $string = 'XXX_' . uc $key;
+        $xml =~ s/$string/$defaults{$key}/;
+    }
+
+    return $xml;
 }
 
 done_testing();

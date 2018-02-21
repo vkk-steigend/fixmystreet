@@ -72,8 +72,21 @@ sub create_problems {
         }
         my $request_id = $request->{service_request_id};
 
-        # If there's no request id then we can't work out
-        # what problem it belongs to so just skip
+        # TODO
+        my %params;
+
+        my ($latitude, $longitude) = ( $request->{lat}, $request->{long} );
+        my $all_areas =
+          mySociety::MaPit::call( 'point',
+            "4326/$longitude,$latitude", %params );
+
+        # skip if it doesn't look like it's for this body
+        my @areas = grep { $all_areas->{$_->area_id} } $body->body_areas;
+        unless (@areas) {
+            warn "Not creating request id $request_id for @{[$body->name]} as outside body area"
+                if $self->verbose;
+            next;
+        }
 
         my $updated_time = eval {
             DateTime::Format::W3CDTF->parse_datetime(
