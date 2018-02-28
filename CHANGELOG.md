@@ -1,6 +1,8 @@
 ## Releases
 
 * Unreleased
+    - New features
+        - Fetch problems over Open311 #1986
     - Front end improvements:
         - Improve questionnaire process. #1939 #1998
     - Admin improvements:
