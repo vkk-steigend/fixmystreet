@@ -411,6 +411,10 @@ $.extend(fixmystreet.set_up, {
             if ( data.category_extra ) {
                 if ( $category_meta.length ) {
                     $category_meta.replaceWith( data.category_extra );
+                    // Preserve any existing values
+                    $category_meta.find("[name]").each(function() {
+                        $('#category_meta').find("[name="+this.name+"]").val(this.value);
+                    });
                 } else {
                     $('#form_category_row').after( data.category_extra );
                 }
@@ -605,6 +609,11 @@ $.extend(fixmystreet.set_up, {
             $('input[name=upload_fileid]', $context).val(newstr);
           });
           this.on("error", function(file, errorMessage, xhrResponse) {
+              var msg = "Invalid file type: " + file.type;
+              if (window.console && console.log) {
+                  console.log(msg);
+              }
+              alert(msg);
           });
           this.on("removedfile", function(file) {
             var ids = $('input[name=upload_fileid]', $context).val().split(','),
